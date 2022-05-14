@@ -1,0 +1,72 @@
+Harnaljia Fenelon (hfenel01)
+Muhammad Ali Khan (mkhan16)
+
+Acknowledgements: Thank you to the TAs that got us over all our humps 
+cuase this assignment was lowkey a struggle. 
+
+Correctly implemented: 
+    We believe everything is correctly implemented.
+    
+    urt0.ums does "contain the startup code to allocate space for the 
+        call stack, and initilize both the stack pointer ad register 0."
+
+    printd.ums does hold the printing function which covers all four cases: 
+        printing 0, negative & positive numbers, and the most negative number. 
+
+    calc40.ums does contain all our " calculator -related data structures 
+        and functions." 
+
+    callmain.ums does make the initial call to main, followed by a halt. 
+
+Any changes that different from recommendation: 
+    We had no departures from the recommendation. 
+
+Print module implementation: Our module uses a recursive function in 
+order to print each digit of a number sequentially, in addition, it uses 
+if statements to handle special base casses, for instance, if the number
+is a zero or negative.
+
+RPN calculator's value stack representation: The value stack is 
+represented by a stack data structure stored in the register r3,
+moreover, it has a capacity to store 10,000 elements and 
+is initialized in the calc40.ums file.
+
+List of sections and purposes: 
+
+File: urtho.ums
+Sections
+1) data - creates a memory stack of 10,000 elements.
+2) init - declares r6, r7 as temporary registers, and 
+makes register zero a zero register. 
+
+File: callmain.ums
+Sections
+1) init - declares r6, r7 as temporary registers, and 
+makes register zero a zero register. This section will
+also call the function callmain which will in turn call 
+the main function inside calc40.ums.
+
+File: printd.ums
+Sections
+1) init - declares r6, r7 as temporary registers, and 
+makes register zero a zero register. 
+2) text - This section contains all the functions that
+will be used to print a particular value that is
+present on top of the stack r2.
+
+File: calc40.ums
+Sections
+1) data - creates a memory stack of 10,000 elements.
+2) init - declares r6, r7 as temporary registers, and 
+makes register zero a zero register. It is also
+creates a jumptable that will hold the corresponding
+function to be called for each operation input into the
+RPN calculator. It also initializes a valEndstack that
+is the value stack used by the RPN caluclator.
+3) text - This section contains functions that 
+implement all the operations of the RPN calculator. 
+
+Hours spent analyzing the assignment: 5
+Hours spent writing assembly code: 10
+Hours spent debugging your calculator: 15
+

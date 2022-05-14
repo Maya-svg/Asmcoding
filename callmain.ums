@@ -1,0 +1,17 @@
+// Harnaljia Fenelon (hfenel01)
+// Muhammad Ali Khan (mkhan16)
+// HW #8 - UMASM 
+
+.section init
+    .zero r0
+    .temps r6,r7
+
+// r0 is always zero 
+// return address stored in r1 
+// memory stack pointer in r2 
+// nonvolatiles r3 & r4
+
+// calling the main function of the program 
+callmain:
+    goto main linking r1
+    halt

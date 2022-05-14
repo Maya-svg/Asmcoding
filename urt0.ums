@@ -1,0 +1,21 @@
+// Harnaljia Fenelon (hfenel01)
+// Muhammad Ali Khan (mkhan16)
+// HW #8 - UMASM 
+
+.section init
+    .temps r6, r7
+    .zero r0
+
+// r0 is always zero 
+// return address stored in r1 
+// memory stack pointer in r2 
+// nonvolatiles r3, r4  
+
+//Creating a stack that can store 100,000 elements
+.section data
+    .space 100000
+    endstack:
+.section init
+    start:
+       r0 := 0
+       r2 := endstack

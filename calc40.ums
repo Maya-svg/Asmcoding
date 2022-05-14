@@ -1,0 +1,380 @@
+// Harnaljia Fenelon (hfenel01)
+// Muhammad Ali Khan (mkhan16)
+// HW #8 - UMASM 
+
+.section init
+    .zero r0
+    .temps r6, r7 
+
+.section data
+    valStack: .space 100000
+    valEndstack:
+
+.section rodata
+    jumptable: 
+        .space 256
+        
+// Puprose: initiliazes and populates the jumptable 
+.section init
+    r3 := valEndstack
+
+    //create a loop to set eveything in table as input error
+    r4 := jumptable         
+    r5 := jumptable + 255
+    push r3 on stack r2
+
+    populate_Jumptable:
+        m[r0][r4] := inputError
+        r4 := r4 + 1
+        if(r4 <=s r5) goto populate_Jumptable using r3
+
+    pop r3 off stack r2
+
+    m[r0][jumptable + '0'] := digit 
+    m[r0][jumptable + '1'] := digit
+    m[r0][jumptable + '2'] := digit
+    m[r0][jumptable + '3'] := digit
+    m[r0][jumptable + '4'] := digit
+    m[r0][jumptable + '5'] := digit
+    m[r0][jumptable + '6'] := digit
+    m[r0][jumptable + '7'] := digit
+    m[r0][jumptable + '8'] := digit
+    m[r0][jumptable + '9'] := digit
+    m[r0][jumptable + ' '] := space
+    m[r0][jumptable + '\n'] := newLine 
+    m[r0][jumptable + '+'] := add 
+    m[r0][jumptable + '-'] := subtract 
+    m[r0][jumptable + '*'] := mul 
+    m[r0][jumptable + '/'] := divide 
+    m[r0][jumptable + '|'] := bitwiseOr 
+    m[r0][jumptable + '&'] := bitwiseAnd 
+    m[r0][jumptable + 'c'] := changeSign 
+    m[r0][jumptable + '~'] := complement
+    m[r0][jumptable + 's'] := swap 
+    m[r0][jumptable + 'd'] := duplicate 
+    m[r0][jumptable + 'p'] := discard 
+    m[r0][jumptable + 'z'] := delete
+
+
+// r0 is always zero 
+// return address stored in r1 
+// memory stack pointer in r2 
+// value stack pointer in r3
+// nonvolatiles r4 & r5 
+.section text
+
+    main:
+        push r1 on stack r2
+        goto waiting linking r1
+        pop r1 off stack r2
+        goto r1
+
+    waiting:
+        r4 := input()
+        // if the input is EOF then end program 
+        if (r4 == -1) goto r1 using r5
+        goto jump
+    
+    // Purpose: searches the jumptable for the user's input
+    // Input: r4 holds the user input
+    // Return: The function will go to that command 
+    jump: 
+        r5 := jumptable + r4
+        r5 := m[r0][r5]
+        goto r5 
+
+    // Purpose: adds a digit to the value stack 
+    // Input: r4 holds the user input
+    // Return: The function will go to the entering state
+    digit: 
+        r4 := r4 - 48
+        push r4 on stack r3
+        goto entering
+    
+    // Purpose: adds multidigit values to the value stack 
+    // Input: r4 holds the user input, r5 holds the growing multidigit 
+    // Return: The function will go to the entering state
+    entering:
+        r4 := input()
+
+        // checking that the input is a digit from 0-9
+        if (r4 <s '0') goto jump using r5
+        if (r4 >s '9') goto jump using r5
+
+        r4 := r4 - 48
+        pop r5 off stack r3
+        r5 := r5 * 10
+        r5 := r5 + r4
+        push r5 on stack r3
+        goto entering
+        
+    // Purpose: does nothing when a space is seen 
+    space:
+        goto waiting 
+    
+    // Purpose: This function will print out the contents of the RPN
+    // value stack that is present on r3.
+    // Input: r3 is the register holding the RPN Value stack.
+    // r2 is the register holding the memory stack
+    // r1 contain the pointer to the return address
+    // Return: Go to the function waiting
+    newLine:
+        // storing address to main 
+        push r1 on stack r2
+        goto startNewLine linking r1
+        pop r1 off stack r2
+        goto waiting
+
+        // Purpose: This function will print the value on top of
+        // the stack r2, as long as the stack is not empty.
+        // Input: r3 is the register holding the RPN Value stack.
+        // r2 is the register holding the memory stack
+        // r1 contain the pointer to the return address on newLine
+        // Output: Print the entire contents of the stack and then
+        // return to newLine.
+        startNewLine:
+        push r1 on stack r2
+
+        // if the stack isnt empty then keep printing 
+        if(valEndstack != r3) goto newLinePop using r4
+
+        // if its empty it should print nothing, (recursive function)
+        pop r1 off stack r2
+        goto r1
+
+        // Purpose: This code will print the value on top r3
+        // Input: r3 is the register holding the RPN Value stack.
+        // r2 is the register holding the memory stack
+        // r1 contain the pointer to the return address (recursive function)
+        newLinePop:    
+            pop r5 off stack r3
+            push r5 on stack r2
+            
+            goto printing linking r1
+            goto startNewLine linking r1
+        
+        // restore the information 
+        pop r5 off stack r2 
+        push r5 on stack r3
+        pop r1 off stack r2  
+        goto r1
+
+    // Purpose: grabs and adds the top two values off the stack 
+                                    // & push the product onto the stack
+    // Input: r4 holds the y value & r5 holds the x value & r3 is the 
+                                    // register holding the RPN Value stack
+    // Return: Go to the function waiting
+    add: 
+        if (valEndstack == r3) goto underflow_2 using r5
+        pop r4 off stack r3
+        if (valEndstack == r3) goto underflow_2_nonEmptyStack using r5
+        pop r5 off stack r3
+        r5 := r5 + r4
+        push r5 on stack r3
+        goto waiting
+
+    // Purpose: grab r4 & r5 off the stack, subtract them 
+                            // & push the difference onto the stack
+    // Input: r3 is the register holding the RPN Value stack
+    // Output: Go to the function waiting
+    subtract:
+        if (valEndstack == r3) goto underflow_2 using r5
+        pop r4 off stack r3
+        if (valEndstack == r3) goto underflow_2_nonEmptyStack using r5
+        pop r5 off stack r3
+        r5 := r5 - r4
+        push r5 on stack r3
+        goto waiting
+
+    // Purpose: grab r4 & r5 off the stack, multiply them 
+                            // & push the result onto the stack 
+    // Input: r3 is the register holding the RPN Value stack
+    // Output: Go to the function waiting
+    mul:
+        if (valEndstack == r3) goto underflow_2 using r5
+        pop r4 off stack r3
+        if (valEndstack == r3) goto underflow_2_nonEmptyStack using r5
+        pop r5 off stack r3
+        r5 := r5 * r4
+        push r5 on stack r3
+        goto waiting
+
+    // Purpose: grab r4 & r5 off the stack, divide them 
+                            // & push the quotient onto the stack 
+    // Input: r3 is the register holding the RPN Value stack
+    // Output: Go to the function waiting
+    divide:
+        if (valEndstack == r3) goto underflow_2 using r5
+        pop r4 off stack r3
+        if (valEndstack == r3) goto underflow_2_nonEmptyStack using r5
+
+        //If dividing by zero then output error
+        if (r4 == r0) goto error using r5
+
+        // Go to a seperate label if second num is a negative #
+        if(r4 <s r0) goto editSecSign using r5
+
+        push r1 on stack r2
+        pop r1 off stack r3
+        // Go to a seperate label if first num is negative #
+        if(r1 <s r0) goto editFirstSign using r5
+        
+        // deals with division if neither nums are negative 
+        r1 := r1 / r4
+        push r1 on stack r3
+        pop r1 off stack r2
+        goto waiting
+
+        editSecSign: 
+            r4 := -r4
+            pop r1 off stack r3
+            //If first number is also negative go to label
+            if(r1 <s r0) goto bothNegative using r5
+            r1 := r1 / r4 
+            r1 := -r1
+            push r1 on stack r3
+            pop r1 off stack r2
+            goto waiting
+
+        editFirstSign:
+            r1 := -r1
+            r1 := r1 / r4 
+            r1 := -r1
+            push r1 on stack r3
+            pop r1 off stack r2
+            goto waiting
+        
+        bothNegative:
+            r1 := -r1
+            r1 := r1 / r4 
+            push r1 on stack r3
+            pop r1 off stack r2
+            goto waiting
+    
+    error:
+        push r4 on stack r3
+        output "Division by zero\n"
+        goto waiting
+
+    // Purpose: grab r4 & r5 off the stack, perform bitwiseOr on the values,
+                                        // pushes the result onto the stack
+    // Input: r3 is the register holding the RPN Value stack
+    // Output: Go to the function waiting
+    bitwiseOr:
+        if (valEndstack == r3) goto underflow_2 using r5
+        pop r4 off stack r3 
+        if (valEndstack == r3) goto underflow_2_nonEmptyStack using r5
+        pop r5 off stack r3
+        r5 := r5 | r4
+        push r5 on stack r3
+        goto waiting
+
+    // Purpose: grab r4 & r5 off the stack, ands them & push the 
+                                            // result onto the stack
+    // Input: r3 is the register holding the RPN Value stack
+    // Output: Go to the function waiting
+    bitwiseAnd:
+        if (valEndstack == r3) goto underflow_2 using r5
+        pop r4 off stack r3 
+        if (valEndstack == r3) goto underflow_2_nonEmptyStack using r5
+        pop r5 off stack r3
+        r5 := r5 & r4
+        push r5 on stack r3
+        goto waiting
+
+    // Purpose: grabs the top value off the stack and toggles the sign
+    // Input: r3 is the register holding the RPN Value stack
+    // Output: Go to the function waiting 
+    changeSign:
+        if (valEndstack == r3) goto underflow using r5
+        pop r5 off stack r3 
+        r5 := -r5 
+        push r5 on stack r3
+        goto waiting
+
+    // Purpose: grabs the top value off the stack & pushes the 
+                            // values' two's complement onto the stack
+    // Input: r3 is the register holding the RPN Value stack
+    // Output: Go to the function waiting 
+    complement:
+        if (valEndstack == r3) goto underflow using r5
+        pop r5 off stack r3
+        r5 := ~r5
+        push r5 on stack r3
+        goto waiting 
+
+    // Purpose: swaps the location of the top two values on the stack
+    // Input: r3 is the register holding the RPN Value stack
+    // Output: Go to the function waiting 
+    swap:
+        if (valEndstack == r3) goto underflow_2 using r5
+        pop r4 off stack r3 
+        if (valEndstack == r3) goto underflow_2_nonEmptyStack using r5
+        pop r5 off stack r3
+
+        push r4 on stack r3
+        push r5 on stack r3
+        
+        goto waiting
+    
+    // Purpose: copies the top value of the stack, pushes it
+    // Input: r3 is the register holding the RPN Value stack
+    // Output: Go to the function waiting
+    duplicate: 
+        if (valEndstack == r3) goto underflow using r5
+        pop r5 off stack r3
+        push r5 on stack r3
+        push r5 on stack r3
+        goto waiting
+    
+    // Purpose: removes the value at the top value of the stack
+    // Input: r3 is the register holding the RPN Value stack
+    // Output: Go to the function waiting
+    discard:
+        if (valEndstack == r3) goto underflow using r5
+        pop r5 off stack r3
+        goto waiting
+
+    // Purpose: removes all the value off the value of the stack
+    // Input: r3 is the register holding the RPN Value stack
+    delete:
+        pop r5 off stack r3
+        if (valEndstack != r3) goto delete using r5
+        goto waiting
+
+    // Purpose: prints an error statement when an operation is 
+    // called on too few values
+    // Output: Go to the function waiting
+    underflow: 
+        output "Stack underflow---expected at least 1 element\n"
+        goto waiting 
+
+    // Purpose: prints an error statement when an operation is called 
+    // on too few values
+    // Output: Go to the function waiting
+    underflow_2:
+        output "Stack underflow---expected at least 2 elements\n"
+        goto waiting 
+    
+    // Purpose: pushes the passed in value but prints an error statement 
+                                            // if its still too few values
+    // Input: The register r4 holds the first value that was popped of 
+    // the stack r3 in an operation that uses two values. This function
+    // will is called when no second value is present for the operation,
+    // and consequently the first value needs to be put on the stack.
+    // Output: Call function underflow_2
+    underflow_2_nonEmptyStack:
+        push r4 on stack r3
+        goto underflow_2
+
+    // Purpose: prints an error statement when invalid input is given 
+    // Input: r4 is the register that is holding the value of the
+    // present invalid character
+    // Return: The function will go to the function waiting 
+    inputError:
+        output "Unknown character "
+        output "'"
+        output r4
+        output "'\n"
+        goto waiting
+
